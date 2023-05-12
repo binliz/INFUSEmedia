@@ -1,0 +1,48 @@
+version: '3.8'
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    networks:
+      INFUSEmedia-networks:
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./src:/app
+    env_file:
+      - .env
+    restart: always
+    links:
+      - fpm
+  fpm:
+    build:
+      context: .
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+        - USER=${USER:-binliz}
+    volumes:
+      - ./src:/app
+    restart: always
+    networks:
+      INFUSEmedia-networks:
+    links:
+      - db
+    env_file:
+      - .env
+  db:
+    image: mariadb
+    expose:
+      - 3306
+    volumes:
+      - mysql-volume:/var/lib/mysql
+      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
+    restart: always
+    env_file:
+      - .env
+    networks:
+      INFUSEmedia-networks:
+volumes:
+  mysql-volume:
+networks:
+  INFUSEmedia-networks:
